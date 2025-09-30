@@ -30,7 +30,13 @@
                 "Sabado",
                 "Domingo"
             ],
-            "relations": []
+            "relations": [
+                {
+                    "target_id": "Q-002",
+                    "condition": "Sabado",
+                    "weight": 0.3
+                }
+            ]
         }
     },
     "next_id": 4

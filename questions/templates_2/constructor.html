@@ -194,6 +194,7 @@
             </form>
         </div>
 
+        <!-- ✨ Lista de preguntas actualizada para mostrar desde el servidor -->
         <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
             <h2 class="text-2xl font-semibold text-gray-700 mb-4">Preguntas Creadas</h2>
             <div class="space-y-4">
@@ -201,26 +202,34 @@
                     <div class="p-4 border border-gray-100 rounded-lg shadow-sm bg-indigo-50/50">
                         <div class="flex justify-between items-center">
                             <div class="font-bold text-gray-800" x-text="question.id + ': ' + question.question"></div>
-                            <div class="text-xs font-semibold" :class="{
-                                'text-green-600 bg-green-100 px-2 py-1 rounded-full': question.importance === 'Low',
-                                'text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full': question.importance === 'Medium',
-                                'text-red-600 bg-red-100 px-2 py-1 rounded-full': question.importance === 'High'
-                            }" x-text="question.importance"></div>
+                            <div class="flex items-center space-x-2">
+                                <div class="text-xs font-semibold" :class="{
+                                    'text-green-600 bg-green-100 px-2 py-1 rounded-full': question.importance === 'Low',
+                                    'text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full': question.importance === 'Medium',
+                                    'text-red-600 bg-red-100 px-2 py-1 rounded-full': question.importance === 'High'
+                                }" x-text="question.importance"></div>
+                                <span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800" x-text="question.type"></span>
+                            </div>
                         </div>
                         <div class="text-sm text-gray-500 mt-2">
-                            <span class="font-medium">Tipo:</span> <span x-text="question.type"></span> | 
                             <span class="font-medium">Respuestas:</span> <span x-text="question.answers.join(', ')"></span>
                         </div>
-                        <div x-show="question.relations.length > 0" class="mt-2 text-xs text-indigo-500">
+                        <div x-show="question.relations && question.relations.length > 0" class="mt-2 text-xs text-indigo-500">
                             <span class="font-medium">Relaciones:</span> 
                             <template x-for="rel in question.relations" :key="rel.target_id + rel.condition">
-                                <span class="mr-2" x-text="`Si se responde '${rel.condition}' la siguiente pregunta será '${rel.target_id}' (${rel.weight} w)`"></span>
+                                <span class="mr-2" x-text="`Si se responde '${rel.condition}' → ${rel.target_id} (${rel.weight}w)`"></span>
                             </template>
                         </div>
                     </div>
                 </template>
             </div>
-            <p x-show="Object.keys(questions).length === 0" class="text-gray-500 italic mt-4">Aún no hay preguntas creadas.</p>
+            <div x-show="Object.keys(questions).length === 0" class="p-12 text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No hay preguntas</h3>
+                <p class="mt-1 text-sm text-gray-500">Comienza creando tu primera pregunta.</p>
+            </div>
         </div>
 
         <!-- Modal de relaciones -->
@@ -290,38 +299,62 @@
         </div>
 
     </div>
+
+    <section class="bg-[#F9F9F9] py-12 mt-12">
+        <div class="container mx-auto text-center">
+            <a href="{% url 'home' %}" class="inline-block bg-[#2A6E78] text-white px-6 py-3 rounded shadow hover:bg-[#1F4E56] transition mr-4">
+                Volver a la Página Principal
+            </a>
+            <a href="{% url 'editor' %}" class="inline-block bg-blue-600 text-white px-6 py-3 rounded shadow hover:bg-blue-700 transition">
+                Editor de Preguntas
+            </a>
+        </div>
+    </section>
     
 
     <script>
         function constructorState() {
-            // 🔹 Cargar preguntas desde LocalStorage al inicio
-            let storedQuestions = {};
+            // ✨ Cargar preguntas desde Django (como en editor.html)
+            const questionsJsonString = '{{ questions|safe|escapejs }}';
+            let persistedQuestions = {};
+            try {
+                if (questionsJsonString.trim()) {
+                    persistedQuestions = JSON.parse(questionsJsonString);
+                }
+            } catch (e) {
+                console.error("Error parsing questions data:", e);
+            }
+
+            // 🔹 También mantener sincronización con localStorage (opcional)
+            let localStorageQuestions = {};
             try {
                 const saved = localStorage.getItem("questions");
                 if (saved) {
-                    storedQuestions = JSON.parse(saved);
+                    localStorageQuestions = JSON.parse(saved);
                 }
             } catch (e) {
                 console.error("Error leyendo LocalStorage:", e);
             }
 
+            // ✨ Priorizar las preguntas del servidor sobre localStorage
+            const finalQuestions = Object.keys(persistedQuestions).length > 0 ? persistedQuestions : localStorageQuestions;
+
             const importanceLevels = ['Low', 'Medium', 'High'];
 
             return {
-                questions: storedQuestions, // ⬅️ carga inicial desde localStorage
+                questions: finalQuestions, // ✨ Usar preguntas del servidor
                 importanceLevels: importanceLevels,
                 isRelated: false,
                 isSubmitting: false,
                 
-                // ✨ Sistema de notificaciones
+                // ✨ Sistema de notificaciones (mismo código que tienes)
                 notification: {
                     show: false,
-                    type: 'info', // success, error, warning, info
+                    type: 'info',
                     title: '',
                     message: ''
                 },
 
-                // ✨ Sistema de errores de validación
                 errors: {},
                 
                 form: {
@@ -338,7 +371,7 @@
                     weight: 0.0 
                 },
 
-                // ✨ Método para mostrar notificaciones
+                // ✨ Todos tus métodos existentes (showNotification, validateForm, etc.)
                 showNotification(type, title, message, duration = 5000) {
                     this.notification = {
                         show: true,
@@ -347,7 +380,6 @@
                         message: message
                     };
                     
-                    // Auto cerrar después del tiempo especificado
                     setTimeout(() => {
                         this.closeNotification();
                     }, duration);
@@ -357,17 +389,14 @@
                     this.notification.show = false;
                 },
 
-                // ✨ Limpiar errores
                 clearErrors() {
                     this.errors = {};
                 },
 
-                // ✨ Validar formulario
                 validateForm() {
                     this.clearErrors();
                     let isValid = true;
 
-                    // Validar pregunta
                     if (!this.form.question.trim()) {
                         this.errors.question = 'La pregunta es obligatoria';
                         isValid = false;
@@ -376,7 +405,6 @@
                         isValid = false;
                     }
 
-                    // Validar respuestas
                     const cleanAnswers = this.form.answers.filter(a => a.trim() !== '');
                     if (cleanAnswers.length === 0) {
                         this.errors.answers = 'Debe proporcionar al menos una respuesta válida';
@@ -389,7 +417,6 @@
                     return isValid;
                 },
 
-                // ✨ Validar relaciones
                 validateRelation() {
                     this.clearErrors();
                     let isValid = true;
@@ -407,8 +434,8 @@
                     return isValid;
                 },
 
-                // 🔹 Guardar en LocalStorage cada vez que se actualicen preguntas
-                saveQuestions() {
+                // ✨ Mantener localStorage como backup
+                saveToLocalStorage() {
                     localStorage.setItem("questions", JSON.stringify(this.questions));
                 },
 
@@ -425,7 +452,7 @@
                     if (this.form.type === 'Simple') {
                         this.form.answers = this.form.answers.slice(0, 1);
                     }
-                    this.clearErrors(); // ✨ Limpiar errores al cambiar tipo
+                    this.clearErrors();
                 },
 
                 addAnswer() {
@@ -441,7 +468,6 @@
                 },
 
                 addRelation() {
-                    // ✨ Validar antes de agregar
                     if (!this.validateRelation()) {
                         return;
                     }
@@ -452,7 +478,7 @@
                     );
 
                     if (existingRelation) {
-                        this.showNotification('warning', 'Relación duplicada', 'Esta relación (Condición + Destino) ya fue agregada.');
+                        this.showNotification('warning', 'Relación duplicada', 'Esta relación ya fue agregada.');
                         return;
                     }
 
@@ -482,32 +508,25 @@
                         relations: []
                     };
                     this.isRelated = false;
-                    this.clearErrors(); // ✨ Limpiar errores
+                    this.clearErrors();
                     this.showNotification('info', 'Formulario limpiado', 'El formulario ha sido reiniciado.');
                 },
 
+                // ✨ Actualizar submitQuestion para usar el servidor
                 async submitQuestion() {
-                    // ✨ Validar antes de guardar
                     if (!this.validateForm()) {
                         this.showNotification('error', 'Error de validación', 'Por favor, corrija los errores antes de continuar.');
                         return;
                     }
 
-                    this.isSubmitting = true; // ✨ Estado de carga
+                    this.isSubmitting = true;
 
                     try {
                         const cleanAnswers = this.form.type === 'Simple' 
                             ? this.form.answers.slice(0, 1).filter(a => a.trim() !== '')
                             : this.form.answers.filter(a => a.trim() !== '');
 
-                        // ✨ Simular delay (opcional - puedes removerlo)
-                        await new Promise(resolve => setTimeout(resolve, 800));
-
-                        // 🔹 Crear un ID incremental (como una BD)
-                        const nextId = Object.keys(this.questions).length + 1;
-
-                        const newQuestion = {
-                            id: nextId,
+                        const payload = {
                             question: this.form.question,
                             type: this.form.type,
                             importance: this.form.importance,
@@ -515,18 +534,42 @@
                             relations: this.form.relations
                         };
 
-                        // 🔹 Guardar en memoria y LocalStorage
-                        this.questions[nextId] = newQuestion;
-                        this.saveQuestions();
+                        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-                        this.resetForm();
-                        this.showNotification('success', '¡Pregunta guardada!', `La pregunta #${nextId} se ha guardado exitosamente en el navegador.`);
+                        const response = await fetch('', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken,
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok && result.status === 'success') {
+                            // ✨ Actualizar las preguntas en memoria
+                            this.questions[result.question.id] = result.question;
+                            
+                            // ✨ También guardar en localStorage como backup
+                            this.saveToLocalStorage();
+
+                            this.resetForm();
+                            this.showNotification('success', '¡Pregunta guardada!', `La pregunta ${result.question.id} se ha guardado exitosamente.`);
+                            
+                            // ✨ Recargar para mostrar la pregunta en la lista
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            this.showNotification('error', 'Error al guardar', result.message || 'Error desconocido');
+                        }
 
                     } catch (error) {
-                        console.error('Error al guardar pregunta:', error);
-                        this.showNotification('error', 'Error al guardar', 'Ocurrió un error inesperado. Inténtalo de nuevo.');
+                        console.error('Error:', error);
+                        this.showNotification('error', 'Error de conexión', 'Ocurrió un error inesperado. Inténtalo de nuevo.');
                     } finally {
-                        this.isSubmitting = false; // ✨ Quitar estado de carga
+                        this.isSubmitting = false;
                     }
                 }
             };

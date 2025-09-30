@@ -93,6 +93,55 @@ def add_question(data):
     print(f"✓ Pregunta {new_id} añadida y guardada")
     return question
 
+def update_question(question_id, data):
+    """Actualiza una pregunta existente."""
+    _load_data()
+    
+    if question_id not in QUESTIONS_STORE:
+        return None
+    
+    # Actualizar los campos
+    QUESTIONS_STORE[question_id].update({
+        "question": data.get('question', QUESTIONS_STORE[question_id]['question']),
+        "type": data.get('type', QUESTIONS_STORE[question_id]['type']),
+        "importance": data.get('importance', QUESTIONS_STORE[question_id]['importance']),
+        "answers": data.get('answers', QUESTIONS_STORE[question_id]['answers']),
+        "relations": data.get('relations', QUESTIONS_STORE[question_id]['relations'])
+    })
+    
+    # Actualizar el grafo
+    QUESTION_GRAPH[question_id] = QUESTIONS_STORE[question_id]['relations']
+    
+    _save_data()
+    print(f"✓ Pregunta {question_id} actualizada")
+    return QUESTIONS_STORE[question_id]
+
+def delete_question(question_id):
+    """Elimina una pregunta y todas sus relaciones."""
+    _load_data()
+    
+    if question_id not in QUESTIONS_STORE:
+        return False
+    
+    # Eliminar la pregunta
+    del QUESTIONS_STORE[question_id]
+    
+    # Eliminar del grafo
+    if question_id in QUESTION_GRAPH:
+        del QUESTION_GRAPH[question_id]
+    
+    # Eliminar todas las relaciones que apunten a esta pregunta
+    for q_id in QUESTIONS_STORE:
+        QUESTIONS_STORE[q_id]['relations'] = [
+            rel for rel in QUESTIONS_STORE[q_id]['relations']
+            if rel.get('target_id') != question_id
+        ]
+        QUESTION_GRAPH[q_id] = QUESTIONS_STORE[q_id]['relations']
+    
+    _save_data()
+    print(f"✓ Pregunta {question_id} eliminada")
+    return True
+
 def get_question_by_id(question_id):
     """Obtiene una pregunta específica por ID."""
     _load_data()

@@ -1,0 +1,767 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Preguntas - Intelligent System</title>
+    <link href="{% static 'css/output.css' %}" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+
+    <div x-data="editorState()">
+
+        <!-- Sistema de Notificaciones Toast -->
+        <div x-show="notification.show" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform translate-y-2"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 transform translate-y-0"
+             x-transition:leave-end="opacity-0 transform translate-y-2"
+             class="fixed top-4 right-4 z-50 max-w-sm w-full">
+            <div class="rounded-lg shadow-lg p-4 border-l-4" 
+                 :class="{
+                     'bg-green-50 border-green-400': notification.type === 'success',
+                     'bg-red-50 border-red-400': notification.type === 'error',
+                     'bg-yellow-50 border-yellow-400': notification.type === 'warning',
+                     'bg-blue-50 border-blue-400': notification.type === 'info'
+                 }">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <!-- Iconos como en el constructor -->
+                        <svg x-show="notification.type === 'success'" class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <svg x-show="notification.type === 'error'" class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
+                        <svg x-show="notification.type === 'warning'" class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                        <svg x-show="notification.type === 'info'" class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="text-sm font-medium" 
+                           :class="{
+                               'text-green-800': notification.type === 'success',
+                               'text-red-800': notification.type === 'error',
+                               'text-yellow-800': notification.type === 'warning',
+                               'text-blue-800': notification.type === 'info'
+                           }" x-text="notification.title"></p>
+                        <p class="mt-1 text-sm" 
+                           :class="{
+                               'text-green-700': notification.type === 'success',
+                               'text-red-700': notification.type === 'error',
+                               'text-yellow-700': notification.type === 'warning',
+                               'text-blue-700': notification.type === 'info'
+                           }" x-text="notification.message"></p>
+                    </div>
+                    <div class="ml-4 flex-shrink-0">
+                        <button @click="closeNotification()" class="inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                :class="{
+                                    'text-green-500 hover:bg-green-100 focus:ring-green-600': notification.type === 'success',
+                                    'text-red-500 hover:bg-red-100 focus:ring-red-600': notification.type === 'error',
+                                    'text-yellow-500 hover:bg-yellow-100 focus:ring-yellow-600': notification.type === 'warning',
+                                    'text-blue-500 hover:bg-blue-100 focus:ring-blue-600': notification.type === 'info'
+                                }">
+                            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Editor de Preguntas</h1>
+            <div class="flex space-x-3">
+                <a href="{% url 'constructor' %}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-150">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    Crear Nueva Pregunta
+                </a>
+                <div class="text-sm text-gray-500 flex items-center">
+                    <span class="font-medium">Total: {{ total_questions }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de preguntas para editar -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-700">Lista de Preguntas</h2>
+                <p class="text-sm text-gray-500 mt-1">Haz clic en una pregunta para editarla o en el botón de eliminar para borrarla.</p>
+            </div>
+            
+            <div class="divide-y divide-gray-200">
+                {% if questions_list %}
+                    {% for question in questions_list %}
+                    <div class="p-6 hover:bg-gray-50 transition-colors duration-150">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1 cursor-pointer" @click="editQuestion('{{ question.id }}')">
+                                <div class="flex items-center space-x-3">
+                                    <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-semibold">{{ question.id }}</span>
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium
+                                        {% if question.importance == 'Low' %}bg-green-100 text-green-800{% elif question.importance == 'Medium' %}bg-yellow-100 text-yellow-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ question.importance }}
+                                    </span>
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{{ question.type }}</span>
+                                </div>
+                                <h3 class="text-lg font-medium text-gray-900 mt-2 cursor-pointer hover:text-indigo-600">{{ question.question }}</h3>
+                                <div class="mt-2 text-sm text-gray-600">
+                                    <span class="font-medium">Respuestas:</span>
+                                    {% for answer in question.answers %}
+                                        <span class="inline-block bg-gray-100 px-2 py-1 rounded text-xs mr-1">{{ answer }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% if question.relations %}
+                                <div class="mt-2 text-sm text-indigo-600">
+                                    <span class="font-medium">Relaciones:</span>
+                                    <span class="text-xs">{{ question.relations|length }} relación{% if question.relations|length != 1 %}es{% endif %}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex space-x-2 ml-4">
+                                <button @click="editQuestion('{{ question.id }}')" class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition duration-150">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                    Editar
+                                </button>
+                                <button @click="confirmDelete('{{ question.id }}', '{{ question.question|truncatechars:30 }}')" class="inline-flex items-center px-3 py-1.5 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition duration-150">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                    Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="p-12 text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No hay preguntas</h3>
+                    <p class="mt-1 text-sm text-gray-500">Comienza creando tu primera pregunta.</p>
+                    <div class="mt-6">
+                        <a href="{% url 'constructor' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                            Nueva Pregunta
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Modal de edición -->
+        <div x-show="showEditModal" 
+             @click.away="closeEditModal()"
+             class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+            
+            <div class="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-screen overflow-y-auto"
+                 @click.stop>
+                <div class="sticky top-0 bg-white border-b border-gray-200 p-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-2xl font-bold text-gray-800">Editar Pregunta</h3>
+                        <button @click="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <form @submit.prevent="updateQuestion" class="p-6 space-y-6">
+                    <!-- ID (solo lectura) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">ID de la Pregunta</label>
+                        <input type="text" x-model="editForm.id" readonly class="mt-1 block w-full rounded-md bg-gray-100 border-gray-300 shadow-sm p-3 text-gray-500">
+                    </div>
+
+                    <!-- Pregunta -->
+                    <div>
+                        <label for="edit-question-text" class="block text-sm font-medium text-gray-700">Pregunta</label>
+                        <textarea 
+                            x-model="editForm.question"
+                            id="edit-question-text" 
+                            placeholder="Ingrese la pregunta del usuario del sistema"
+                            rows="4" 
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3 border resize-none"
+                            :class="{'border-red-300 focus:border-red-500 focus:ring-red-500': errors.question}"></textarea>
+                        <p x-show="errors.question" x-text="errors.question" class="mt-1 text-sm text-red-600"></p>
+                    </div>
+
+                    <!-- Tipo e Importancia -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tipo:</label>
+                            <div class="space-y-2">
+                                <label class="inline-flex items-center">
+                                    <input type="radio" x-model="editForm.type" value="Simple" class="form-radio text-indigo-600 h-4 w-4 border-gray-300" @change="ensureSingleAnswerEdit">
+                                    <span class="ml-2 text-gray-600">Simple (Una respuesta)</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" x-model="editForm.type" value="Multiple" class="form-radio text-indigo-600 h-4 w-4 border-gray-300">
+                                    <span class="ml-2 text-gray-600">Múltiple (Varias respuestas)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="edit-importance" class="block text-sm font-medium text-gray-700">Importancia:</label>
+                            <select x-model="editForm.importance" id="edit-importance" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border bg-white">
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Respuestas -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Respuestas:</label>
+                        <div class="space-y-3">
+                            <template x-if="editForm.type === 'Simple'">
+                                <div class="flex items-center space-x-3">
+                                    <div class="rounded-full h-4 w-4 border-2 bg-indigo-500 border-indigo-500"></div>
+                                    <input 
+                                        x-model="editForm.answers[0]"
+                                        placeholder="Ingrese la opción de respuesta..."
+                                        type="text" 
+                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
+                                        :class="{'border-red-300 focus:border-red-500 focus:ring-red-500': errors.answers}">
+                                </div>
+                            </template>
+
+                            <template x-if="editForm.type === 'Multiple'">
+                                <div class="space-y-3">
+                                    <template x-for="(answer, index) in editForm.answers" :key="index">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="rounded-sm h-4 w-4 border-2 bg-indigo-500 border-indigo-500"></div>
+                                            <input 
+                                                x-model="editForm.answers[index]"
+                                                :placeholder="`Ingrese la opción de respuesta ${index + 1}...`"
+                                                type="text" 
+                                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
+                                                :class="{'border-red-300 focus:border-red-500 focus:ring-red-500': errors.answers}">
+                                            <button type="button" @click="removeAnswerEdit(index)" class="text-red-500 hover:text-red-700 transition duration-150" x-show="editForm.answers.length > 1">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <p x-show="errors.answers" x-text="errors.answers" class="text-sm text-red-600"></p>
+                            
+                            <button type="button" @click="addAnswerEdit" x-show="editForm.type === 'Multiple' && editForm.answers.length < 8" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Añadir Opción de Respuesta
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Relaciones -->
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="block text-sm font-medium text-gray-700">Relaciones</label>
+                            <button type="button" @click="showRelationModal = true" class="inline-flex items-center px-3 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition duration-150">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Añadir Relación
+                            </button>
+                        </div>
+                        
+                        <div x-show="editForm.relations.length > 0" class="space-y-2">
+                            <template x-for="(relation, index) in editForm.relations" :key="index">
+                                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-md border">
+                                    <div class="text-sm">
+                                        <span class="font-medium">Si se responde:</span> 
+                                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs" x-text="relation.condition"></span>
+                                        <span class="font-medium ml-2">→ Siguiente pregunta:</span> 
+                                        <span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs" x-text="relation.target_id"></span>
+                                        <span class="text-gray-500 ml-2">(Peso: <span x-text="relation.weight"></span>)</span>
+                                    </div>
+                                    <button type="button" @click="removeRelationEdit(index)" class="text-red-500 hover:text-red-700">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <p x-show="editForm.relations.length === 0" class="text-sm text-gray-500 italic">No hay relaciones definidas.</p>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                        <button type="button" @click="closeEditModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition duration-150">
+                            Cancelar
+                        </button>
+                        <button type="submit" :disabled="isUpdating" class="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            <svg x-show="isUpdating" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span x-text="isUpdating ? 'Actualizando...' : 'Actualizar Pregunta'"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal de confirmación de eliminación -->
+        <div x-show="showDeleteModal" 
+             class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+            
+            <div class="bg-white rounded-lg shadow-2xl max-w-md w-full" @click.stop>
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                            <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.96-.833-2.73 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Eliminar Pregunta</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500">
+                                ¿Estás seguro de que quieres eliminar la pregunta 
+                                <span class="font-medium" x-text="deleteConfirm.id"></span>: 
+                                "<span x-text="deleteConfirm.question"></span>"? 
+                                Esta acción no se puede deshacer y también eliminará todas las relaciones asociadas.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg">
+                    <button @click="deleteQuestion()" :disabled="isDeleting" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+                        <span x-show="!isDeleting">Eliminar</span>
+                        <span x-show="isDeleting" class="flex items-center">
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Eliminando...
+                        </span>
+                    </button>
+                    <button @click="showDeleteModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para agregar/editar relaciones -->
+        <div x-show="showRelationModal" 
+             @click.away="showRelationModal = false"
+             class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+            
+            <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg" @click.stop>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Agregar Relación</h3>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Pregunta Destino:</label>
+                            <select x-model="tempRelation.target_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border bg-white">
+                                <option value="">-- Seleccionar una pregunta --</option>
+                                {% for question in questions_list %}
+                                    <option value="{{ question.id }}">{{ question.id }}: {{ question.question|truncatechars:40 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Condición (Si se responde):</label>
+                            <select x-model="tempRelation.condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border bg-white">
+                                <option value="">-- Seleccionar respuesta --</option>
+                                <template x-for="(answer, index) in editForm.answers.filter(a => a.trim() !== '')" :key="index">
+                                    <option :value="answer" x-text="`${answer}`"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Peso:</label>
+                            <div x-text="getImportanceWeight(editForm.importance)" class="mt-1 block w-full rounded-md bg-gray-100 border border-gray-300 shadow-sm p-2 text-sm font-semibold"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button @click="showRelationModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition duration-150">
+                            Cancelar
+                        </button>
+                        <button @click="addRelationEdit()" :disabled="!tempRelation.target_id || !tempRelation.condition" class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-400 transition duration-150">
+                            Agregar Relación
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Botón para volver -->
+    <section class="bg-[#F9F9F9] py-12 mt-12">
+        <div class="container mx-auto text-center">
+            <a href="{% url 'home' %}" class="inline-block bg-[#2A6E78] text-white px-6 py-3 rounded shadow hover:bg-[#1F4E56] transition mr-4">
+                Volver a la Página Principal
+            </a>
+            <a href="{% url 'constructor' %}" class="inline-block bg-indigo-600 text-white px-6 py-3 rounded shadow hover:bg-indigo-700 transition">
+                Constructor de Preguntas
+            </a>
+        </div>
+    </section>
+
+    <script>
+        function editorState() {
+            // Cargar preguntas desde Django
+            const questionsJsonString = '{{ questions|safe|escapejs }}';
+            let persistedQuestions = {};
+            try {
+                if (questionsJsonString.trim()) {
+                    persistedQuestions = JSON.parse(questionsJsonString);
+                }
+            } catch (e) {
+                console.error("Error parsing questions data:", e);
+            }
+
+            return {
+                questions: persistedQuestions,
+                showEditModal: false,
+                showDeleteModal: false,
+                showRelationModal: false,
+                isUpdating: false,
+                isDeleting: false,
+                
+                // Sistema de notificaciones
+                notification: {
+                    show: false,
+                    type: 'info',
+                    title: '',
+                    message: ''
+                },
+
+                // Sistema de errores
+                errors: {},
+
+                // Formulario de edición
+                editForm: {
+                    id: '',
+                    question: '',
+                    type: 'Simple',
+                    importance: 'Low',
+                    answers: [''],
+                    relations: []
+                },
+
+                // Relación temporal
+                tempRelation: {
+                    target_id: '',
+                    condition: '',
+                    weight: 0.0
+                },
+
+                // Confirmación de eliminación
+                deleteConfirm: {
+                    id: '',
+                    question: ''
+                },
+
+                // Métodos de notificación
+                showNotification(type, title, message, duration = 5000) {
+                    this.notification = {
+                        show: true,
+                        type: type,
+                        title: title,
+                        message: message
+                    };
+                    
+                    setTimeout(() => {
+                        this.closeNotification();
+                    }, duration);
+                },
+
+                closeNotification() {
+                    this.notification.show = false;
+                },
+
+                // Limpiar errores
+                clearErrors() {
+                    this.errors = {};
+                },
+
+                // Validar formulario
+                validateForm() {
+                    this.clearErrors();
+                    let isValid = true;
+
+                    if (!this.editForm.question.trim()) {
+                        this.errors.question = 'La pregunta es obligatoria';
+                        isValid = false;
+                    } else if (this.editForm.question.trim().length < 10) {
+                        this.errors.question = 'La pregunta debe tener al menos 10 caracteres';
+                        isValid = false;
+                    }
+
+                    const cleanAnswers = this.editForm.answers.filter(a => a.trim() !== '');
+                    if (cleanAnswers.length === 0) {
+                        this.errors.answers = 'Debe proporcionar al menos una respuesta válida';
+                        isValid = false;
+                    } else if (this.editForm.type === 'Multiple' && cleanAnswers.length < 2) {
+                        this.errors.answers = 'Las preguntas múltiples deben tener al menos 2 opciones';
+                        isValid = false;
+                    }
+
+                    return isValid;
+                },
+
+                // Obtener peso por importancia
+                getImportanceWeight(importance) {
+                    switch (importance) {
+                        case 'High': return 0.9;
+                        case 'Medium': return 0.5;
+                        case 'Low': return 0.3;
+                        default: return 0.0;
+                    }
+                },
+
+                // Editar pregunta
+                editQuestion(questionId) {
+                    const question = this.questions[questionId];
+                    if (question) {
+                        this.editForm = {
+                            id: question.id,
+                            question: question.question,
+                            type: question.type,
+                            importance: question.importance,
+                            answers: [...question.answers],
+                            relations: [...question.relations]
+                        };
+                        this.showEditModal = true;
+                        this.clearErrors();
+                    }
+                },
+
+                closeEditModal() {
+                    this.showEditModal = false;
+                    this.clearErrors();
+                },
+
+                // Confirmar eliminación
+                confirmDelete(questionId, questionText) {
+                    this.deleteConfirm = {
+                        id: questionId,
+                        question: questionText
+                    };
+                    this.showDeleteModal = true;
+                },
+
+                // Manejar respuestas en edición
+                ensureSingleAnswerEdit() {
+                    if (this.editForm.type === 'Simple') {
+                        this.editForm.answers = this.editForm.answers.slice(0, 1);
+                    }
+                    this.clearErrors();
+                },
+
+                addAnswerEdit() {
+                    if (this.editForm.type === 'Multiple' && this.editForm.answers.length < 8) {
+                        this.editForm.answers.push('');
+                    }
+                },
+
+                removeAnswerEdit(index) {
+                    if (this.editForm.type === 'Multiple' && this.editForm.answers.length > 1) {
+                        this.editForm.answers.splice(index, 1);
+                    }
+                },
+
+                // Manejar relaciones en edición
+                addRelationEdit() {
+                    if (!this.tempRelation.target_id || !this.tempRelation.condition) {
+                        this.showNotification('warning', 'Datos incompletos', 'Debe seleccionar una pregunta destino y una condición.');
+                        return;
+                    }
+
+                    const existingRelation = this.editForm.relations.find(rel => 
+                        rel.target_id === this.tempRelation.target_id && 
+                        rel.condition === this.tempRelation.condition
+                    );
+
+                    if (existingRelation) {
+                        this.showNotification('warning', 'Relación duplicada', 'Esta relación ya existe.');
+                        return;
+                    }
+
+                    const weight = this.getImportanceWeight(this.editForm.importance);
+
+                    this.editForm.relations.push({
+                        target_id: this.tempRelation.target_id,
+                        condition: this.tempRelation.condition,
+                        weight: weight
+                    });
+
+                    this.tempRelation = { target_id: '', condition: '', weight: 0.0 };
+                    this.showRelationModal = false;
+                    this.showNotification('success', 'Relación agregada', 'La relación se ha agregado correctamente.');
+                },
+
+                removeRelationEdit(index) {
+                    this.editForm.relations.splice(index, 1);
+                    this.showNotification('info', 'Relación eliminada', 'La relación ha sido eliminada.');
+                },
+
+                // Actualizar pregunta
+                async updateQuestion() {
+                    if (!this.validateForm()) {
+                        this.showNotification('error', 'Error de validación', 'Por favor, corrija los errores antes de continuar.');
+                        return;
+                    }
+
+                    this.isUpdating = true;
+
+                    try {
+                        const cleanAnswers = this.editForm.type === 'Simple' 
+                            ? this.editForm.answers.slice(0, 1).filter(a => a.trim() !== '')
+                            : this.editForm.answers.filter(a => a.trim() !== '');
+
+                        const payload = {
+                            id: this.editForm.id,
+                            question: this.editForm.question,
+                            type: this.editForm.type,
+                            importance: this.editForm.importance,
+                            answers: cleanAnswers,
+                            relations: this.editForm.relations
+                        };
+
+                        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                        const response = await fetch('', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken,
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok && result.status === 'success') {
+                            // Actualizar la pregunta en memoria
+                            this.questions[this.editForm.id] = result.question;
+                            
+                            this.closeEditModal();
+                            this.showNotification('success', 'Pregunta actualizada', `La pregunta ${this.editForm.id} se ha actualizado exitosamente.`);
+                            
+                            // Recargar la página para mostrar los cambios
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            this.showNotification('error', 'Error al actualizar', result.message || 'Error desconocido');
+                        }
+
+                    } catch (error) {
+                        console.error('Error:', error);
+                        this.showNotification('error', 'Error de conexión', 'Ocurrió un error inesperado. Inténtalo de nuevo.');
+                    } finally {
+                        this.isUpdating = false;
+                    }
+                },
+
+                // Eliminar pregunta
+                async deleteQuestion() {
+                    this.isDeleting = true;
+
+                    try {
+                        const payload = {
+                            id: this.deleteConfirm.id
+                        };
+
+                        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                        const response = await fetch('', {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken,
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok && result.status === 'success') {
+                            // Eliminar de memoria
+                            delete this.questions[this.deleteConfirm.id];
+                            
+                            this.showDeleteModal = false;
+                            this.showNotification('success', 'Pregunta eliminada', `La pregunta ${this.deleteConfirm.id} se ha eliminado exitosamente.`);
+                            
+                            // Recargar la página para mostrar los cambios
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            this.showNotification('error', 'Error al eliminar', result.message || 'Error desconocido');
+                        }
+
+                    } catch (error) {
+                        console.error('Error:', error);
+                        this.showNotification('error', 'Error de conexión', 'Ocurrió un error inesperado. Inténtalo de nuevo.');
+                    } finally {
+                        this.isDeleting = false;
+                    }
+                }
+            };
+        }
+    </script>
+
+    {% csrf_token %}
+</body>
+</html>
+{% endblock %}
