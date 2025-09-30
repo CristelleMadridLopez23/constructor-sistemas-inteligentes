@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<!-- Hero Section -->
+  <section class="bg-[#4B1139] text-white text-center py-20">
+    <h1 class="text-3xl md:text-5xl font-bold my-4">
+      Guía del Sistema de Gestión de Preguntas
+    </h1>
+    <p class="max-w-2xl mx-auto text-[#E5E5E5]">
+      Bienvenido al <strong>Constructor de Sistemas Inteligentes</strong>.  
+      Aquí encontrarás la guía para crear, editar y organizar preguntas que serán la base del motor de inferencia.
+    </p>
+    
+    <br>
+    </section>
+  <!-- Acordeón de ayuda -->
+  <section class="container mx-auto py-12 px-6">
+  <div class="space-y-4">
+    <details class="bg-white border-l-4 border-[#4B1139] shadow rounded p-4">
+      <summary class="font-semibold text-[#3B4058] cursor-pointer">1. ¿Qué es este sistema?</summary>
+      <p class="mt-2 text-gray-600">
+        Es una herramienta para <strong>ingenieros de conocimiento</strong> que permite diseñar preguntas y reglas lógicas
+        que servirán como base para un motor de inferencia (similar a un sistema experto).
+      </p>
+    </details>
+
+    <details class="bg-white border-l-4 border-[#2A6E78] shadow rounded p-4">
+      <summary class="font-semibold text-[#3B4058] cursor-pointer">2. ¿Cómo crear una pregunta?</summary>
+      <p class="mt-2 text-gray-600">
+        Ve al menú ❓ <strong>Questions</strong>, escribe la pregunta, selecciona si es respuesta <em>simple</em> o <em>múltiple</em>,
+        y agrega hasta <strong>8 opciones de respuesta</strong>.
+      </p>
+    </details>
+
+    <details class="bg-white border-l-4 border-[#7A907C] shadow rounded p-4">
+      <summary class="font-semibold text-[#3B4058] cursor-pointer">3. ¿Cómo definir importancia?</summary>
+      <p class="mt-2 text-gray-600">
+        Cada pregunta puede clasificarse como <span class="font-bold text-[#4B1139]">Baja</span>, 
+        <span class="font-bold text-[#2A6E78]">Media</span> o <span class="font-bold text-[#7A907C]">Alta</span>.
+        Esto ayuda a priorizar su impacto en el sistema.
+      </p>
+    </details>
+
+    <details class="bg-white border-l-4 border-[#C9B180] shadow rounded p-4">
+      <summary class="font-semibold text-[#3B4058] cursor-pointer">4. ¿Cómo guardar y cargar preguntas?</summary>
+      <p class="mt-2 text-gray-600">
+        Usa el botón 💾 <strong>Save Question</strong> para exportar tus preguntas a un archivo,
+        y 📂 <strong>Load Question</strong> para cargarlas en otra sesión.
+      </p>
+    </details>
+
+    <details class="bg-white border-l-4 border-[#4B1139] shadow rounded p-4">
+      <summary class="font-semibold text-[#3B4058] cursor-pointer">5. ¿Qué pasa con las preguntas relacionadas?</summary>
+      <p class="mt-2 text-gray-600">
+        Puedes configurar condiciones para que una pregunta solo aparezca si otra fue respondida de cierta manera.  
+        Ejemplo: <em>Si el usuario responde "Sí" a fiebre, preguntar temperatura exacta.</em>
+      </p>
+    </details>
+  </div>
+
+  <!-- FAQ -->
+  <div class="mt-12 bg-white shadow rounded-lg p-6">
+    <h2 class="text-2xl font-bold text-[#2A6E78] mb-4">❓ Preguntas Frecuentes</h2>
+    <ul class="list-disc pl-6 text-gray-700 space-y-2">
+      <li>¿Puedo tener más de 8 opciones de respuesta? → No, el límite es 8.</li>
+      <li>¿Qué pasa si no relaciono una pregunta? → Aparecerá como pregunta independiente.</li>
+      <li>¿Dónde se guardan los archivos? → Se descargan en tu dispositivo en formato JSON o similar.</li>
+    </ul>
+  </div>
+  <section class="bg-[#F9F9F9] py-12 mt-12">
+    <div class="container mx-auto text-center">
+      <a href="{% url 'home' %}" class="inline-block bg-[#2A6E78] text-white px-6 py-3 rounded shadow hover:bg-[#1F4E56] transition">
+        Volver a la Página Principal
+      </a>
+    </div>
+</section>
+{% endblock %}

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "questions",
+    "help",
     'crispy_forms',
     'crispy_bootstrap5',
 ]
@@ -58,7 +59,7 @@ ROOT_URLCONF = "constructor.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        'DIRS': [os.path.join(BASE_DIR, 'templates'), os.path.join(BASE_DIR, 'homepage', 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'templates'), os.path.join(BASE_DIR, 'homepage', 'templates',)],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
