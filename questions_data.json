@@ -1,0 +1,37 @@
+{
+    "questions": {
+        "Q-001": {
+            "id": "Q-001",
+            "question": " vc b ",
+            "type": "Simple",
+            "importance": "Low",
+            "answers": [
+                "b vb vb"
+            ],
+            "relations": []
+        },
+        "Q-002": {
+            "id": "Q-002",
+            "question": "b b ",
+            "type": "Simple",
+            "importance": "Low",
+            "answers": [
+                "b b "
+            ],
+            "relations": []
+        },
+        "Q-003": {
+            "id": "Q-003",
+            "question": "Que dia es el mejor ?\n",
+            "type": "Multiple",
+            "importance": "Low",
+            "answers": [
+                "Viernes",
+                "Sabado",
+                "Domingo"
+            ],
+            "relations": []
+        }
+    },
+    "next_id": 4
+}

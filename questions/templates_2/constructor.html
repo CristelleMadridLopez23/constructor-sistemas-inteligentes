@@ -1,0 +1,539 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent System Constructor</title>
+    <link href="{% static 'css/output.css' %}" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+
+    <div x-data="constructorState()">
+
+        <!-- Sistema de Notificaciones Toast -->
+        <div x-show="notification.show" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform translate-y-2"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 transform translate-y-0"
+             x-transition:leave-end="opacity-0 transform translate-y-2"
+             class="fixed top-4 right-4 z-50 max-w-sm w-full">
+            <div class="rounded-lg shadow-lg p-4 border-l-4" 
+                 :class="{
+                     'bg-green-50 border-green-400': notification.type === 'success',
+                     'bg-red-50 border-red-400': notification.type === 'error',
+                     'bg-yellow-50 border-yellow-400': notification.type === 'warning',
+                     'bg-blue-50 border-blue-400': notification.type === 'info'
+                 }">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <!-- Icono de éxito -->
+                        <svg x-show="notification.type === 'success'" class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <!-- Icono de error -->
+                        <svg x-show="notification.type === 'error'" class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
+                        <!-- Icono de advertencia -->
+                        <svg x-show="notification.type === 'warning'" class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                        <!-- Icono de info -->
+                        <svg x-show="notification.type === 'info'" class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="text-sm font-medium" 
+                           :class="{
+                               'text-green-800': notification.type === 'success',
+                               'text-red-800': notification.type === 'error',
+                               'text-yellow-800': notification.type === 'warning',
+                               'text-blue-800': notification.type === 'info'
+                           }" x-text="notification.title"></p>
+                        <p class="mt-1 text-sm" 
+                           :class="{
+                               'text-green-700': notification.type === 'success',
+                               'text-red-700': notification.type === 'error',
+                               'text-yellow-700': notification.type === 'warning',
+                               'text-blue-700': notification.type === 'info'
+                           }" x-text="notification.message"></p>
+                    </div>
+                    <div class="ml-4 flex-shrink-0">
+                        <button @click="closeNotification()" class="inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                :class="{
+                                    'text-green-500 hover:bg-green-100 focus:ring-green-600': notification.type === 'success',
+                                    'text-red-500 hover:bg-red-100 focus:ring-red-600': notification.type === 'error',
+                                    'text-yellow-500 hover:bg-yellow-100 focus:ring-yellow-600': notification.type === 'warning',
+                                    'text-blue-500 hover:bg-blue-100 focus:ring-blue-600': notification.type === 'info'
+                                }">
+                            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Panel Constructor de Preguntas</h1>
+
+        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-2">Nueva Pregunta del Sistema</h2>
+            
+            <form @submit.prevent="submitQuestion" class="space-y-6">
+                
+                <div>
+                    <label for="question-text" class="block text-sm font-medium text-gray-700">Pregunta del Usuario del Sistema:</label>
+                    <textarea 
+                        x-model="form.question"
+                        id="question-text" 
+                        placeholder="Ingrese la pregunta del usuario del sistema"
+                        rows="4" 
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3 border resize-none"
+                        :class="{'border-red-300 focus:border-red-500 focus:ring-red-500': errors.question}"></textarea>
+                    <p x-show="errors.question" x-text="errors.question" class="mt-1 text-sm text-red-600"></p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo:</label>
+                        <div class="flex items-center space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" x-model="form.type" value="Simple" class="form-radio text-indigo-600 h-4 w-4 border-gray-300" name="type" @change="ensureSingleAnswer">
+                                <span class="ml-2 text-gray-600">Simple (Una respuesta)</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" x-model="form.type" value="Multiple" class="form-radio text-indigo-600 h-4 w-4 border-gray-300" name="type">
+                                <span class="ml-2 text-gray-600">Múltiple (Varias respuestas)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="importance" class="block text-sm font-medium text-gray-700">Importancia:</label>
+                        <select x-model="form.importance" id="importance" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border bg-white">
+                            <template x-for="level in importanceLevels" :key="level">
+                                <option :value="level" x-text="level"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div class="flex items-end">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" x-model="isRelated" class="form-checkbox text-indigo-600 h-5 w-5 border-gray-300 rounded">
+                            <span class="ml-2 text-sm font-medium text-gray-700">Pregunta Relacionada</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Respuestas:</label>
+                    <div class="space-y-3">
+                        
+                        <template x-if="form.type === 'Simple'">
+                            <div class="flex items-center space-x-3">
+                                <div class="rounded-full h-4 w-4 border-2 bg-indigo-500 border-indigo-500"></div>
+                                <div class="flex-1">
+                                    <input 
+                                        x-model="form.answers[0]"
+                                        placeholder="Ingrese la opción de respuesta..."
+                                        type="text" 
+                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
+                                        :class="{'border-red-300 focus:border-red-500 focus:ring-red-500': errors.answers}">
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="form.type === 'Multiple'">
+                            <div class="space-y-3">
+                                <template x-for="(answer, index) in form.answers" :key="index">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="rounded-sm h-4 w-4 border-2 bg-indigo-500 border-indigo-500"></div>
+                                        <input 
+                                            x-model="form.answers[index]"
+                                            :placeholder="`Ingrese la opción de respuesta ${index + 1}...`"
+                                            type="text" 
+                                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
+                                            :class="{'border-red-300 focus:border-red-500 focus:ring-red-500': errors.answers}">
+                                        <button type="button" @click="removeAnswer(index)" class="text-red-500 hover:text-red-700 transition duration-150" x-show="form.answers.length > 1">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        
+                        <p x-show="errors.answers" x-text="errors.answers" class="text-sm text-red-600"></p>
+                        
+                        <button type="button" @click="addAnswer" x-show="form.type === 'Multiple' && form.answers.length < 8" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mt-2 flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            Añadir Opción de Respuesta
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" @click="resetForm" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition duration-150">Limpiar</button>
+                    <button type="submit" :disabled="isSubmitting" class="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                        <svg x-show="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span x-text="isSubmitting ? 'Guardando...' : 'Guardar Pregunta'"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Preguntas Creadas</h2>
+            <div class="space-y-4">
+                <template x-for="question in Object.values(questions)" :key="question.id">
+                    <div class="p-4 border border-gray-100 rounded-lg shadow-sm bg-indigo-50/50">
+                        <div class="flex justify-between items-center">
+                            <div class="font-bold text-gray-800" x-text="question.id + ': ' + question.question"></div>
+                            <div class="text-xs font-semibold" :class="{
+                                'text-green-600 bg-green-100 px-2 py-1 rounded-full': question.importance === 'Low',
+                                'text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full': question.importance === 'Medium',
+                                'text-red-600 bg-red-100 px-2 py-1 rounded-full': question.importance === 'High'
+                            }" x-text="question.importance"></div>
+                        </div>
+                        <div class="text-sm text-gray-500 mt-2">
+                            <span class="font-medium">Tipo:</span> <span x-text="question.type"></span> | 
+                            <span class="font-medium">Respuestas:</span> <span x-text="question.answers.join(', ')"></span>
+                        </div>
+                        <div x-show="question.relations.length > 0" class="mt-2 text-xs text-indigo-500">
+                            <span class="font-medium">Relaciones:</span> 
+                            <template x-for="rel in question.relations" :key="rel.target_id + rel.condition">
+                                <span class="mr-2" x-text="`Si se responde '${rel.condition}' la siguiente pregunta será '${rel.target_id}' (${rel.weight} w)`"></span>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <p x-show="Object.keys(questions).length === 0" class="text-gray-500 italic mt-4">Aún no hay preguntas creadas.</p>
+        </div>
+
+        <!-- Modal de relaciones -->
+        <div 
+            x-show="isRelated" 
+            @click.away="isRelated = false"
+            class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 transition duration-300 ease-in-out"
+            x-transition:enter="opacity-0"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="opacity-0"
+            x-transition:leave-end="opacity-0"
+        >
+            <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-lg transform transition-all duration-300"
+                 @click.stop>
+                <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Definir Relación de Pregunta</h3>
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="target-question" class="block text-sm font-medium text-gray-700">Relacionar con Pregunta (Nodo Destino):</label>
+                        <select x-model="tempRelation.target_id" id="target-question" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border bg-white"
+                                :class="{'border-red-300 focus:border-red-500 focus:ring-red-500': errors.targetId}">
+                            <option value="">-- Seleccionar una pregunta --</option>
+                            <template x-for="question in Object.values(questions)" :key="question.id">
+                                <option :value="question.id" x-text="question.id + ': ' + question.question.substring(0, 40) + '...'"></option>
+                            </template>
+                        </select>
+                        <p x-show="errors.targetId" x-text="errors.targetId" class="mt-1 text-sm text-red-600"></p>
+                    </div>
+
+                    <div>
+                        <label for="relation-condition" class="block text-sm font-medium text-gray-700">Condición (Si se escoge ESTA respuesta):</label>
+                        <select x-model="tempRelation.condition" id="relation-condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 border bg-white"
+                                :class="{'border-red-300 focus:border-red-500 focus:ring-red-500': errors.condition}">
+                            <option value="">-- Seleccionar una condición de respuesta --</option>
+                            <template x-for="(answer, index) in form.answers.filter(a => a.trim() !== '')" :key="index">
+                                <option :value="answer" x-text="`Opción ${index + 1}: ${answer}`"></option>
+                            </template>
+                        </select>
+                        <p x-show="errors.condition" x-text="errors.condition" class="mt-1 text-sm text-red-600"></p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Peso de Relación (Basado en Importancia):</label>
+                        <div x-text="getImportanceWeight(form.importance)" class="mt-1 block w-full rounded-md bg-gray-100 border border-gray-300 shadow-sm p-2 text-sm font-semibold"></div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="button" @click="addRelation()" :disabled="!tempRelation.target_id || !tempRelation.condition" class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-400 transition duration-150">Añadir Relación</button>
+                    </div>
+
+                    <div x-show="form.relations.length > 0" class="border-t pt-4 mt-4">
+                        <h4 class="text-md font-semibold text-gray-700 mb-2">Relaciones Actuales:</h4>
+                        <template x-for="(rel, index) in form.relations" :key="index">
+                            <div class="flex justify-between items-center text-sm bg-gray-50 p-2 rounded-md mb-1 border">
+                                <span x-text="`Si se responde '${rel.condition}' la siguiente pregunta será '${rel.target_id}' (Peso: ${rel.weight})`"></span>
+                                <button type="button" @click="removeRelation(index)" class="text-red-400 hover:text-red-600 ml-3">Eliminar</button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <button type="button" @click="isRelated = false" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition duration-150">Cerrar</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+
+    <script>
+        function constructorState() {
+            // 🔹 Cargar preguntas desde LocalStorage al inicio
+            let storedQuestions = {};
+            try {
+                const saved = localStorage.getItem("questions");
+                if (saved) {
+                    storedQuestions = JSON.parse(saved);
+                }
+            } catch (e) {
+                console.error("Error leyendo LocalStorage:", e);
+            }
+
+            const importanceLevels = ['Low', 'Medium', 'High'];
+
+            return {
+                questions: storedQuestions, // ⬅️ carga inicial desde localStorage
+                importanceLevels: importanceLevels,
+                isRelated: false,
+                isSubmitting: false,
+                
+                // ✨ Sistema de notificaciones
+                notification: {
+                    show: false,
+                    type: 'info', // success, error, warning, info
+                    title: '',
+                    message: ''
+                },
+
+                // ✨ Sistema de errores de validación
+                errors: {},
+                
+                form: {
+                    question: '',
+                    type: 'Simple',
+                    importance: 'Low',
+                    answers: [''],
+                    relations: []
+                },
+
+                tempRelation: {
+                    target_id: '',
+                    condition: '',
+                    weight: 0.0 
+                },
+
+                // ✨ Método para mostrar notificaciones
+                showNotification(type, title, message, duration = 5000) {
+                    this.notification = {
+                        show: true,
+                        type: type,
+                        title: title,
+                        message: message
+                    };
+                    
+                    // Auto cerrar después del tiempo especificado
+                    setTimeout(() => {
+                        this.closeNotification();
+                    }, duration);
+                },
+
+                closeNotification() {
+                    this.notification.show = false;
+                },
+
+                // ✨ Limpiar errores
+                clearErrors() {
+                    this.errors = {};
+                },
+
+                // ✨ Validar formulario
+                validateForm() {
+                    this.clearErrors();
+                    let isValid = true;
+
+                    // Validar pregunta
+                    if (!this.form.question.trim()) {
+                        this.errors.question = 'La pregunta es obligatoria';
+                        isValid = false;
+                    } else if (this.form.question.trim().length < 10) {
+                        this.errors.question = 'La pregunta debe tener al menos 10 caracteres';
+                        isValid = false;
+                    }
+
+                    // Validar respuestas
+                    const cleanAnswers = this.form.answers.filter(a => a.trim() !== '');
+                    if (cleanAnswers.length === 0) {
+                        this.errors.answers = 'Debe proporcionar al menos una respuesta válida';
+                        isValid = false;
+                    } else if (this.form.type === 'Multiple' && cleanAnswers.length < 2) {
+                        this.errors.answers = 'Las preguntas múltiples deben tener al menos 2 opciones';
+                        isValid = false;
+                    }
+
+                    return isValid;
+                },
+
+                // ✨ Validar relaciones
+                validateRelation() {
+                    this.clearErrors();
+                    let isValid = true;
+
+                    if (!this.tempRelation.target_id) {
+                        this.errors.targetId = 'Debe seleccionar una pregunta destino';
+                        isValid = false;
+                    }
+
+                    if (!this.tempRelation.condition) {
+                        this.errors.condition = 'Debe seleccionar una condición';
+                        isValid = false;
+                    }
+
+                    return isValid;
+                },
+
+                // 🔹 Guardar en LocalStorage cada vez que se actualicen preguntas
+                saveQuestions() {
+                    localStorage.setItem("questions", JSON.stringify(this.questions));
+                },
+
+                getImportanceWeight(importance) {
+                    switch (importance) {
+                        case 'High': return 0.9;
+                        case 'Medium': return 0.5;
+                        case 'Low': return 0.3;
+                        default: return 0.0;
+                    }
+                },
+
+                ensureSingleAnswer() {
+                    if (this.form.type === 'Simple') {
+                        this.form.answers = this.form.answers.slice(0, 1);
+                    }
+                    this.clearErrors(); // ✨ Limpiar errores al cambiar tipo
+                },
+
+                addAnswer() {
+                    if (this.form.type === 'Multiple' && this.form.answers.length < 8) {
+                        this.form.answers.push('');
+                    }
+                },
+
+                removeAnswer(index) {
+                    if (this.form.type === 'Multiple' && this.form.answers.length > 1) {
+                        this.form.answers.splice(index, 1);
+                    }
+                },
+
+                addRelation() {
+                    // ✨ Validar antes de agregar
+                    if (!this.validateRelation()) {
+                        return;
+                    }
+
+                    const existingRelation = this.form.relations.find(rel => 
+                        rel.target_id === this.tempRelation.target_id && 
+                        rel.condition === this.tempRelation.condition
+                    );
+
+                    if (existingRelation) {
+                        this.showNotification('warning', 'Relación duplicada', 'Esta relación (Condición + Destino) ya fue agregada.');
+                        return;
+                    }
+
+                    const weight = this.getImportanceWeight(this.form.importance);
+
+                    this.form.relations.push({
+                        target_id: this.tempRelation.target_id,
+                        condition: this.tempRelation.condition,
+                        weight: weight 
+                    });
+
+                    this.tempRelation = { target_id: '', condition: '', weight: 0.0 };
+                    this.showNotification('success', '¡Relación agregada!', 'La relación se ha agregado correctamente.');
+                },
+
+                removeRelation(index) {
+                    this.form.relations.splice(index, 1);
+                    this.showNotification('info', 'Relación eliminada', 'La relación ha sido eliminada.');
+                },
+
+                resetForm() {
+                    this.form = {
+                        question: '',
+                        type: 'Simple',
+                        importance: 'Low',
+                        answers: [''],
+                        relations: []
+                    };
+                    this.isRelated = false;
+                    this.clearErrors(); // ✨ Limpiar errores
+                    this.showNotification('info', 'Formulario limpiado', 'El formulario ha sido reiniciado.');
+                },
+
+                async submitQuestion() {
+                    // ✨ Validar antes de guardar
+                    if (!this.validateForm()) {
+                        this.showNotification('error', 'Error de validación', 'Por favor, corrija los errores antes de continuar.');
+                        return;
+                    }
+
+                    this.isSubmitting = true; // ✨ Estado de carga
+
+                    try {
+                        const cleanAnswers = this.form.type === 'Simple' 
+                            ? this.form.answers.slice(0, 1).filter(a => a.trim() !== '')
+                            : this.form.answers.filter(a => a.trim() !== '');
+
+                        // ✨ Simular delay (opcional - puedes removerlo)
+                        await new Promise(resolve => setTimeout(resolve, 800));
+
+                        // 🔹 Crear un ID incremental (como una BD)
+                        const nextId = Object.keys(this.questions).length + 1;
+
+                        const newQuestion = {
+                            id: nextId,
+                            question: this.form.question,
+                            type: this.form.type,
+                            importance: this.form.importance,
+                            answers: cleanAnswers,
+                            relations: this.form.relations
+                        };
+
+                        // 🔹 Guardar en memoria y LocalStorage
+                        this.questions[nextId] = newQuestion;
+                        this.saveQuestions();
+
+                        this.resetForm();
+                        this.showNotification('success', '¡Pregunta guardada!', `La pregunta #${nextId} se ha guardado exitosamente en el navegador.`);
+
+                    } catch (error) {
+                        console.error('Error al guardar pregunta:', error);
+                        this.showNotification('error', 'Error al guardar', 'Ocurrió un error inesperado. Inténtalo de nuevo.');
+                    } finally {
+                        this.isSubmitting = false; // ✨ Quitar estado de carga
+                    }
+                }
+            };
+        }
+    </script>
+
+    {% csrf_token %}
+</body>
+</html>
+{% endblock %}

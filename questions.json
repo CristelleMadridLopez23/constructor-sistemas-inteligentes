@@ -1,0 +1,53 @@
+{
+    "questions": {
+        "Q-001": {
+            "id": "Q-001",
+            "question": "cual es tu nombre\n",
+            "type": "Simple",
+            "importance": "Low",
+            "answers": [
+                "marta"
+            ],
+            "relations": []
+        },
+        "Q-002": {
+            "id": "Q-002",
+            "question": "cual es tu color favorito\n",
+            "type": "Simple",
+            "importance": "Low",
+            "answers": [
+                "azul"
+            ],
+            "relations": [
+                {
+                    "target_id": "Q-001",
+                    "condition": "azul",
+                    "weight": 0.3
+                }
+            ]
+        },
+        "Q-003": {
+            "id": "Q-003",
+            "question": "Cual es tu pie favorito",
+            "type": "Simple",
+            "importance": "Low",
+            "answers": [
+                "El derecho"
+            ],
+            "relations": []
+        },
+        "Q-004": {
+            "id": "Q-004",
+            "question": "Cuales son tus materias preferidas",
+            "type": "Multiple",
+            "importance": "Medium",
+            "answers": [
+                "Matematicas",
+                "Ingles",
+                "Educacion Fisica"
+            ],
+            "relations": []
+        }
+    },
+    "next_id": 5
+}
