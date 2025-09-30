@@ -1,24 +1,36 @@
-# Archivos de Python
+# =========================
+# Python / Django
+# =========================
 *.pyc
 __pycache__/
 *.pyo
 *.pyd
 *.sqlite3
+*.log
 
-# Entornos virtuales / Conda
-venv/
-.env/
+# Archivos de entorno
+.env
 *.env
+venv/
 .conda/
 
 # Archivos de Django
 staticfiles/
 media/
 
-# Archivos de IDE (VSCode, PyCharm, etc.)
+# =========================
+# Node / Tailwind
+# =========================
+node_modules/
+package-lock.json
+
+# Archivos generados por Tailwind (se compilan, no se suben)
+static/css/output.css
+
+# =========================
+# IDEs y Sistema
+# =========================
 .vscode/
 .idea/
-
-# Archivos de sistema
 .DS_Store
 Thumbs.db
