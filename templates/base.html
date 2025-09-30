@@ -1,0 +1,27 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Constructor de Sistema Inteligente</title>
+  <link href="{% static 'css/output.css' %}" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
+
+  <!-- 🔹 Barra de navegación -->
+  <nav class="bg-blue-600 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex space-x-8">
+      <a href="#" class="hover:underline flex items-center">❓ Questions</a>
+      <a href="#" class="hover:underline flex items-center">⚙️ Options</a>
+      <a href="#" class="hover:underline flex items-center">✏️ Edit</a>
+      <a href="#" class="hover:underline flex items-center">🆘 Help</a>
+    </div>
+  </nav>
+
+  <!-- 🔹 Contenido dinámico -->
+  <main class="flex-1 max-w-4xl mx-auto p-6">
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>

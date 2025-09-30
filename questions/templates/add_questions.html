@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-lg p-6 space-y-6">
+
+  <!-- Pregunta -->
+  <div>
+    <label class="block text-sm font-medium text-gray-700">System User Question</label>
+    <textarea class="w-full mt-2 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" 
+              rows="2" placeholder="Enter the question of the user"></textarea>
+  </div>
+
+  <!-- Tipo de respuesta -->
+  <div>
+    <label class="block text-sm font-medium text-gray-700">Type</label>
+    <div class="mt-2 flex space-x-4">
+      <label class="flex items-center space-x-2">
+        <input type="radio" name="answer_type" class="text-blue-600 focus:ring-blue-500">
+        <span>Simple</span>
+      </label>
+      <label class="flex items-center space-x-2">
+        <input type="radio" name="answer_type" class="text-blue-600 focus:ring-blue-500">
+        <span>Multiple</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Relación entre preguntas -->
+  <div>
+    <label class="flex items-center space-x-2">
+      <input type="checkbox" class="text-blue-600 focus:ring-blue-500">
+      <span>Related Question</span>
+    </label>
+    <!-- Selector de preguntas relacionadas -->
+    <select class="mt-2 w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+      <option value="">-- Select related question --</option>
+      <option>Pregunta 1</option>
+      <option>Pregunta 2</option>
+    </select>
+  </div>
+
+  <!-- Opciones de respuesta -->
+  <div>
+    <label class="block text-sm font-medium text-gray-700">Answers</label>
+    <div class="mt-2 space-y-2">
+      {% for i in "12345678" %}
+      <div class="flex items-center space-x-2">
+        <input type="checkbox" disabled class="text-blue-600">
+        <input type="text" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Enter answer option...">
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Importancia -->
+  <div>
+    <label class="block text-sm font-medium text-gray-700">Importance</label>
+    <select class="mt-2 w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+    </select>
+  </div>
+
+  <!-- Información de ayuda -->
+  <div>
+    <button class="flex items-center px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">
+      ❓ Add Help
+    </button>
+    <textarea class="w-full mt-2 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              rows="2" placeholder="Enter help text here..."></textarea>
+  </div>
+
+  <!-- Botones inferiores -->
+  <div class="flex justify-between items-center">
+    <!-- Navegación -->
+    <div class="space-x-2">
+      <button class="px-3 py-1 bg-blue-500 text-white rounded-lg">⏮ First</button>
+      <button class="px-3 py-1 bg-blue-500 text-white rounded-lg">◀ Previous</button>
+      <button class="px-3 py-1 bg-blue-500 text-white rounded-lg">▶ Next</button>
+      <button class="px-3 py-1 bg-blue-500 text-white rounded-lg">⏭ Last</button>
+    </div>
+    <!-- Acciones -->
+    <div class="space-x-2">
+      <button class="px-4 py-2 bg-blue-500 text-white rounded-lg">💾 Save Question</button>
+      <button class="px-4 py-2 bg-blue-500 text-white rounded-lg">📂 Load Question</button>
+      <button class="px-4 py-2 bg-gray-500 text-white rounded-lg">Exit</button>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
