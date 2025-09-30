@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+  <!-- Hero Section -->
+  <section class="bg-[#2A6E78] text-white text-center py-20">
+    <p class="uppercase tracking-wider text-sm text-[#C9B180]">Universidad Tecnológica de Panamá</p>
+    <h1 class="text-3xl md:text-5xl font-bold my-4">
+      Ingeniería de Sistemas Inteligentes
+    </h1>
+    <p class="max-w-2xl mx-auto text-[#E5E5E5]">
+      Cristelle Madrid, Jonathan Hinostroza, Miguel Solis, Jean Eleta, Ethan Martinez
+    </p>
+  </section>
+
+  <!-- Cards Section -->
+  <section class="container mx-auto py-12 px-6 grid md:grid-cols-3 gap-6">
+    <div class="bg-white border-t-4 border-[#4B1139] shadow-lg rounded-lg p-6">
+      <div class="h-32 bg-[#7A907C] rounded mb-4"></div>
+      <h2 class="text-lg font-bold mb-2 text-[#3B4058]">Gestión de Preguntas</h2>
+      <p class="text-sm text-[#7A907C]">Crea y organiza preguntas como base del motor de inferencia.</p>
+    </div>
+    <div class="bg-white border-t-4 border-[#2A6E78] shadow-lg rounded-lg p-6">
+      <div class="h-32 bg-[#C9B180] rounded mb-4"></div>
+      <h2 class="text-lg font-bold mb-2 text-[#3B4058]">Opciones Avanzadas</h2>
+      <p class="text-sm text-[#7A907C]">Configura importancia, relaciones lógicas y condiciones.</p>
+    </div>
+    <div class="bg-white border-t-4 border-[#3B4058] shadow-lg rounded-lg p-6">
+      <div class="h-32 bg-[#4B1139] rounded mb-4"></div>
+      <h2 class="text-lg font-bold mb-2 text-[#3B4058]">Guardar & Cargar</h2>
+      <p class="text-sm text-[#7A907C]">Mantén tus avances con carga/descarga de archivos.</p>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="bg-[#F9F9F9] py-12">
+    <div class="container mx-auto grid md:grid-cols-3 gap-8 text-center">
+      <div class="p-6 shadow rounded-lg bg-white">
+        <span class="text-4xl">❓</span>
+        <h3 class="text-lg font-bold mt-4 text-[#2A6E78]">Preguntas Inteligentes</h3>
+        <p class="text-gray-600 mt-2">Categorización en respuesta única o múltiple con hasta 8 opciones.</p>
+      </div>
+      <div class="p-6 shadow rounded-lg bg-white">
+        <span class="text-4xl">⚙️</span>
+        <h3 class="text-lg font-bold mt-4 text-[#2A6E78]">Relaciones Lógicas</h3>
+        <p class="text-gray-600 mt-2">Define dependencias entre preguntas para guiar al usuario.</p>
+      </div>
+      <div class="p-6 shadow rounded-lg bg-white">
+        <span class="text-4xl">🆘</span>
+        <h3 class="text-lg font-bold mt-4 text-[#2A6E78]">Ayuda Contextual</h3>
+        <p class="text-gray-600 mt-2">Agrega información de ayuda para mejorar la comprensión.</p>
+      </div>
+    </div>
+  </section>
+
+{% endblock %}
