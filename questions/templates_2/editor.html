@@ -91,6 +91,16 @@
                     </svg>
                     Crear Nueva Pregunta
                 </a>
+                <!-- Importar preguntas JSON -->
+                <div class="flex items-center space-x-2">
+                    <input id="import-file-input" type="file" accept="application/json" class="hidden" @change="handleFileChange" x-ref="importFile">
+                    <button type="button" @click="$refs.importFile.click()" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-150">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Importar JSON
+                    </button>
+                </div>
                 <div class="text-sm text-gray-500 flex items-center">
                     <span class="font-medium">Total: {{ total_questions }}</span>
                 </div>
@@ -756,7 +766,48 @@
                     } finally {
                         this.isDeleting = false;
                     }
-                }
+                    },
+
+                // Manejo de importación de preguntas desde archivo JSON
+                handleFileChange(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    // Confirmación rápida
+                    if (!confirm(`Importar preguntas desde ${file.name}? Esto añadirá nuevas preguntas al final.`)) {
+                        event.target.value = '';
+                        return;
+                    }
+
+                    this.importQuestions(file);
+                    // limpiar input
+                    event.target.value = '';
+                },
+
+                async importQuestions(file) {
+                    try {
+                        const form = new FormData();
+                        form.append('file', file);
+                        form.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+                        const response = await fetch('', {
+                            method: 'POST',
+                            body: form
+                        });
+
+                        const result = await response.json();
+                        if (response.ok && result.status === 'success') {
+                            this.showNotification('success', 'Importación completa', `Se añadieron ${result.added_count} preguntas.`);
+                            // Recargar para mostrar las nuevas preguntas
+                            setTimeout(() => window.location.reload(), 800);
+                        } else {
+                            this.showNotification('error', 'Error importando', result.message || 'Estructura JSON inválida');
+                        }
+                    } catch (err) {
+                        console.error('Error importando preguntas:', err);
+                        this.showNotification('error', 'Error conexión', 'No se pudo subir el archivo');
+                    }
+                },
             };
         }
     </script>

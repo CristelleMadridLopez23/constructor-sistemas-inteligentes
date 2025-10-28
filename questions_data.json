@@ -12,19 +12,26 @@
         },
         "Q-002": {
             "id": "Q-002",
-            "question": "b b ",
-            "type": "Simple",
-            "importance": "Low",
+            "question": "b b hkhkkhkh",
+            "type": "Multiple",
+            "importance": "Medium",
             "answers": [
-                "b b "
+                "b b ",
+                "b a"
             ],
-            "relations": []
+            "relations": [
+                {
+                    "target_id": "Q-003",
+                    "condition": "b a",
+                    "weight": 0.5
+                }
+            ]
         },
         "Q-003": {
             "id": "Q-003",
             "question": "Que dia es el mejor ?\n",
             "type": "Multiple",
-            "importance": "Low",
+            "importance": "Medium",
             "answers": [
                 "Viernes",
                 "Sabado",
@@ -35,9 +42,37 @@
                     "target_id": "Q-002",
                     "condition": "Sabado",
                     "weight": 0.3
+                },
+                {
+                    "target_id": "Q-001",
+                    "condition": "Domingo",
+                    "weight": 0.5
+                }
+            ]
+        },
+        "Q-006": {
+            "id": "Q-006",
+            "question": "Que mes es el mejor ?\n",
+            "type": "Multiple",
+            "importance": "Medium",
+            "answers": [
+                "agsto",
+                "Enero",
+                "Diciembre"
+            ],
+            "relations": [
+                {
+                    "target_id": "Q-002",
+                    "condition": "Sabado",
+                    "weight": 0.3
+                },
+                {
+                    "target_id": "Q-001",
+                    "condition": "Domingo",
+                    "weight": 0.5
                 }
             ]
         }
     },
-    "next_id": 4
+    "next_id": 7
 }

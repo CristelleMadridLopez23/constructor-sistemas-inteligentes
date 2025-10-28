@@ -8,6 +8,8 @@ crispy-bootstrap5==2024.2
 # Utilidades
 python-decouple==3.8
 pillow==10.4.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
 
 # Extras recomendados (para mantener calidad de código)
 black==24.8.0

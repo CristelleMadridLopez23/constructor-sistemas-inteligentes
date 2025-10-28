@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+    <div id="question-view" class="bg-white shadow-lg rounded-lg p-6 max-w-2xl mx-auto">
+        <div class="mb-4">
+            <div class="text-sm text-gray-500">
+                Pregunta <span id="current-number">1</span> de <span id="total-questions">0</span>
+            </div>
+            <h2 id="question-text" class="text-xl font-semibold mt-2"></h2>
+        </div>
+
+        <form id="answer-form" class="space-y-4">
+            <div id="answers-container" class="space-y-3"></div>
+            <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors">
+                Siguiente
+            </button>
+        </form>
+    </div>
+
+    <!-- Vista de resumen -->
+    <div id="summary-view" class="bg-white shadow-lg rounded-lg p-6 max-w-2xl mx-auto mt-8" style="display: none;">
+        <h2 class="text-2xl font-bold mb-6">Resumen de Respuestas</h2>
+        <div id="answers-summary" class="space-y-4"></div>
+        
+        <h3 class="text-xl font-semibold mt-8 mb-4">Árbol de Decisión</h3>
+        <div id="decision-tree" class="border rounded p-4"></div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Parsear datos que vienen de la vista. La vista puede enviar strings JSON o ya objetos;
+    // intentamos parsear ambas situaciones.
+    function safeParseJsonString(maybeJsonString) {
+        if (!maybeJsonString && maybeJsonString !== 0) return null;
+        try {
+            // Si vienen como objeto serializado (string con comillas escapadas), JSON.parse lo resolverá
+            return JSON.parse(maybeJsonString);
+        } catch (e) {
+            try {
+                // Si la vista pasó un objeto y el template lo imprimió con |safe, el literal ya existe
+                return maybeJsonString;
+            } catch (e2) {
+                return null;
+            }
+        }
+    }
+
+    // Obtener los datos embebidos por la vista. La vista actualmente envía JSON como string en la clave 'questions' y 'first_questions'.
+    // Usamos escapejs para evitar romper el string JS.
+    const rawQuestions = `{{ questions|escapejs }}`;
+    const rawFirst = `{{ first_questions|escapejs }}`;
+
+    let questions = safeParseJsonString(rawQuestions) || {};
+    let firstQuestions = safeParseJsonString(rawFirst) || [];
+
+    console.log('Parsed questions:', questions);
+    console.log('Parsed firstQuestions:', firstQuestions);
+
+    // Elementos del DOM
+    const questionText = document.getElementById('question-text');
+    const answersContainer = document.getElementById('answers-container');
+    const questionView = document.getElementById('question-view');
+    const summaryView = document.getElementById('summary-view');
+    const answersSummary = document.getElementById('answers-summary');
+    const decisionTreeContainer = document.getElementById('decision-tree');
+    const answerForm = document.getElementById('answer-form');
+
+    // Añadir token CSRF dentro del form si no existe (para que podamos leerlo desde JS)
+    if (!answerForm.querySelector('[name="csrfmiddlewaretoken"]')) {
+        const csrftokenInput = document.createElement('input');
+        csrftokenInput.type = 'hidden';
+        csrftokenInput.name = 'csrfmiddlewaretoken';
+        csrftokenInput.value = '{{ csrf_token }}';
+        answerForm.appendChild(csrftokenInput);
+    }
+
+    function getCsrfToken() {
+        const el = document.querySelector('[name="csrfmiddlewaretoken"]');
+        return el ? el.value : '';
+    }
+
+    // Estado local
+    let currentQuestionId = null;
+    const askedQuestions = [];
+    const answers = {};
+
+    // Mostrar una pregunta por id
+    function displayQuestion(id) {
+        const q = questions[id];
+        if (!q) {
+            console.warn('No existe la pregunta con id', id);
+            return false;
+        }
+
+        questionText.textContent = q.question || '';
+
+        // Generar opciones
+        answersContainer.innerHTML = (q.answers || []).map((a, i) => `
+            <label class="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input type="radio" name="answer" value="${a}" required class="form-radio h-5 w-5 text-indigo-600">
+                <span class="text-gray-700">${a}</span>
+            </label>
+        `).join('');
+
+        currentQuestionId = id;
+        if (!askedQuestions.includes(id)) askedQuestions.push(id);
+        document.getElementById('current-number').textContent = askedQuestions.length;
+        document.getElementById('total-questions').textContent = Object.keys(questions).length;
+
+        return true;
+    }
+
+    // Renderizar árbol de decisión simple
+    function renderDecisionTree(tree) {
+        decisionTreeContainer.innerHTML = '';
+        if (!Array.isArray(tree)) return;
+
+        tree.forEach((node, idx) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'mb-3';
+            wrapper.innerHTML = `
+                <p class="font-medium">${node.question || node.id} ${node.weight ? `(peso: ${node.weight})` : ''}</p>
+                <p class="text-indigo-600 ml-4">➥ ${node.answer || ''}</p>
+            `;
+            decisionTreeContainer.appendChild(wrapper);
+        });
+    }
+
+    // Manejar submit del form
+    answerForm.addEventListener('submit', async function (ev) {
+        ev.preventDefault();
+        const checked = document.querySelector('input[name="answer"]:checked');
+        if (!checked) return;
+
+        answers[currentQuestionId] = checked.value;
+
+        try {
+            const resp = await fetch('', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    current_question: currentQuestionId,
+                    answer: checked.value,
+                    asked_questions: askedQuestions,
+                    answers: answers
+                })
+            });
+
+            const data = await resp.json();
+            if (data.status === 'completed') {
+                // Mostrar resumen
+                questionView.style.display = 'none';
+                answersSummary.innerHTML = Object.entries(answers).map(([qid, a]) => `
+                    <div class="border-b pb-4">
+                        <p class="font-medium">${(questions[qid] && questions[qid].question) || qid}</p>
+                        <p class="text-gray-600 ml-4">➥ ${a}</p>
+                    </div>
+                `).join('');
+
+                // Si el servidor devolvió una imagen (base64), mostrarla; si no, renderizar la estructura simple
+                if (data.decision_tree_image) {
+                    decisionTreeContainer.innerHTML = `<img src="${data.decision_tree_image}" alt="Árbol de decisión" class="w-full" />`;
+                } else {
+                    renderDecisionTree(data.decision_tree || []);
+                }
+                summaryView.style.display = 'block';
+            } else if (data.status === 'next') {
+                const next = Array.isArray(data.next_questions) && data.next_questions.length ? data.next_questions[0] : null;
+                if (next) displayQuestion(next);
+                answerForm.reset();
+            } else {
+                console.error('Respuesta inesperada del servidor', data);
+                alert('Ocurrió un problema al obtener la siguiente pregunta');
+            }
+        } catch (err) {
+            console.error('Error enviando respuesta:', err);
+            alert('Error al comunicarse con el servidor');
+        }
+    });
+
+    // Inicialización: elegir primera pregunta
+    (function init() {
+        let firstId = null;
+        if (Array.isArray(firstQuestions) && firstQuestions.length) {
+            firstId = firstQuestions[0];
+        } else {
+            // fallback: primera clave del objeto questions
+            const keys = Object.keys(questions || {});
+            firstId = keys.length ? keys[0] : null;
+        }
+
+        if (!firstId) {
+            // no hay preguntas
+            questionText.textContent = 'No hay preguntas disponibles.';
+            answersContainer.innerHTML = '';
+            return;
+        }
+
+        displayQuestion(firstId);
+    })();
+});
+</script>
+{% endblock %}
