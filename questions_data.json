@@ -1,78 +1,139 @@
 {
-    "questions": {
-        "Q-001": {
-            "id": "Q-001",
-            "question": " vc b ",
-            "type": "Simple",
-            "importance": "Low",
-            "answers": [
-                "b vb vb"
-            ],
-            "relations": []
-        },
-        "Q-002": {
-            "id": "Q-002",
-            "question": "b b hkhkkhkh",
-            "type": "Multiple",
-            "importance": "Medium",
-            "answers": [
-                "b b ",
-                "b a"
-            ],
-            "relations": [
-                {
-                    "target_id": "Q-003",
-                    "condition": "b a",
-                    "weight": 0.5
-                }
-            ]
-        },
-        "Q-003": {
-            "id": "Q-003",
-            "question": "Que dia es el mejor ?\n",
-            "type": "Multiple",
-            "importance": "Medium",
-            "answers": [
-                "Viernes",
-                "Sabado",
-                "Domingo"
-            ],
-            "relations": [
-                {
-                    "target_id": "Q-002",
-                    "condition": "Sabado",
-                    "weight": 0.3
-                },
-                {
-                    "target_id": "Q-001",
-                    "condition": "Domingo",
-                    "weight": 0.5
-                }
-            ]
-        },
-        "Q-006": {
-            "id": "Q-006",
-            "question": "Que mes es el mejor ?\n",
-            "type": "Multiple",
-            "importance": "Medium",
-            "answers": [
-                "agsto",
-                "Enero",
-                "Diciembre"
-            ],
-            "relations": [
-                {
-                    "target_id": "Q-002",
-                    "condition": "Sabado",
-                    "weight": 0.3
-                },
-                {
-                    "target_id": "Q-001",
-                    "condition": "Domingo",
-                    "weight": 0.5
-                }
-            ]
+  "questions": {
+    "Q-007": {
+      "id": "Q-007",
+      "question": "¿Tiene fiebre (sensación de calor) actualmente?",
+      "type": "Simple",
+      "importance": "High",
+      "answers": [
+        "Sí",
+        "No"
+      ],
+      "relations": [
+        {
+          "target_id": "Q-008",
+          "condition": "Sí",
+          "weight": 0.9
         }
+      ]
     },
-    "next_id": 7
+    "Q-008": {
+      "id": "Q-008",
+      "question": "¿Cuál es su temperatura aproximada?",
+      "type": "Simple",
+      "importance": "High",
+      "answers": [
+        "<37.5",
+        "37.5-38.5",
+        ">38.5"
+      ],
+      "relations": [
+        {
+          "target_id": "Q-009",
+          "condition": ">38.5",
+          "weight": 0.9
+        }
+      ]
+    },
+    "Q-009": {
+      "id": "Q-009",
+      "question": "¿Presenta dificultad para respirar?",
+      "type": "Simple",
+      "importance": "High",
+      "answers": [
+        "Sí",
+        "No"
+      ],
+      "relations": [
+        {
+          "target_id": "Q-010",
+          "condition": "Sí",
+          "weight": 0.95
+        }
+      ]
+    },
+    "Q-010": {
+      "id": "Q-010",
+      "question": "¿Tiene tos?",
+      "type": "Multiple",
+      "importance": "Medium",
+      "answers": [
+        "Seca",
+        "Con flema",
+        "No"
+      ],
+      "relations": [
+        {
+          "target_id": "Q-008",
+          "condition": "Seca",
+          "weight": 0.4
+        }
+      ]
+    },
+    "Q-011": {
+      "id": "Q-011",
+      "question": "¿Ha viajado recientemente o tuvo contacto con alguien enfermo?",
+      "type": "Simple",
+      "importance": "Medium",
+      "answers": [
+        "Sí",
+        "No"
+      ],
+      "relations": []
+    },
+    "Q-012": {
+      "id": "Q-012",
+      "question": "¿Qué otros síntomas presenta? (marque los que apliquen)",
+      "type": "Multiple",
+      "importance": "Low",
+      "answers": [
+        "Dolor de garganta",
+        "Dolor de cabeza",
+        "Pérdida de olfato/gusto",
+        "Ninguno"
+      ],
+      "relations": [
+        {
+          "target_id": "Q-010",
+          "condition": "Pérdida de olfato/gusto",
+          "weight": 0.6
+        }
+      ]
+    }
+  },
+  "inferences": {
+    "D-001": {
+      "id": "D-001",
+      "title": "Posible infección respiratoria grave",
+      "description": "Fiebre alta + dificultad para respirar sugiere evaluación médica urgente.",
+      "conditions": [
+        {"question_id": "Q-007", "answer": "Sí", "weight": 0.6},
+        {"question_id": "Q-008", "answer": ">38.5", "weight": 0.7},
+        {"question_id": "Q-009", "answer": "Sí", "weight": 0.9}
+      ],
+      "threshold": 1.5
+    },
+    "D-002": {
+      "id": "D-002",
+      "title": "Probable resfriado común",
+      "description": "Síntomas leves compatibles con resfriado; manejo en casa.",
+      "conditions": [
+        {"question_id": "Q-010", "answer": "Con flema", "weight": 0.4},
+        {"question_id": "Q-012", "answer": "Dolor de garganta", "weight": 0.3}
+      ],
+      "threshold": 0.5
+    }
+    ,
+    "D-003": {
+      "id": "D-003",
+      "title": "Saludable",
+      "description": "Sin resfriado.",
+      "conditions": [
+        {"question_id": "Q-007", "answer": "No", "weight": 0.4},
+        {"question_id": "Q-010", "answer": "No", "weight": 0.3}
+      ],
+      "threshold": 0.5
+    }
+  },
+  "next_id": 13
 }

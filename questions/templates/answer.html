@@ -26,6 +26,10 @@
         
         <h3 class="text-xl font-semibold mt-8 mb-4">Árbol de Decisión</h3>
         <div id="decision-tree" class="border rounded p-4"></div>
+
+        <!-- Nuevo: resultado de la inferencia -->
+        <h3 class="text-xl font-semibold mt-8 mb-4">Resultado de la Inferencia</h3>
+        <div id="inference-container" class="border rounded p-4"></div>
     </div>
 </div>
 
@@ -69,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const summaryView = document.getElementById('summary-view');
     const answersSummary = document.getElementById('answers-summary');
     const decisionTreeContainer = document.getElementById('decision-tree');
+    const inferenceContainer = document.getElementById('inference-container');
     const answerForm = document.getElementById('answer-form');
 
     // Añadir token CSRF dentro del form si no existe (para que podamos leerlo desde JS)
@@ -132,6 +137,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function renderInference(infData) {
+        inferenceContainer.innerHTML = '';
+        if (!infData || !infData.all_results) return;
+        const top = infData.results && infData.results.length ? infData.results[0] : null;
+        const list = infData.all_results || [];
+
+        let html = '';
+        if (top) {
+            html += `<div class="mb-4 p-3 bg-green-50 border rounded">
+                        <p class="font-bold text-lg">${top.title || top.id} ${top.matched ? '<span class="text-sm text-green-700 ml-2">(Coincide)</span>' : ''}</p>
+                        <p class="text-gray-700">${top.description || ''}</p>
+                        <p class="text-sm text-gray-600 mt-2">Puntaje: ${top.score}</p>
+                     </div>`;
+        }
+
+        if (list.length) {
+            html += `<details class="mt-2"><summary class="cursor-pointer font-medium">Ver todas las inferencias (${list.length})</summary>
+                        <ul class="mt-2 ml-4">` +
+                    list.map(i => `<li class="mb-2">
+                        <strong>${i.title || i.id}</strong> — score: ${i.score} ${i.matched ? '(umbral alcanzado)' : ''}
+                        <div class="text-sm text-gray-600">${i.description || ''}</div>
+                        </li>`).join('') +
+                    `</ul></details>`;
+        }
+
+        inferenceContainer.innerHTML = html;
+    }
+
     // Manejar submit del form
     answerForm.addEventListener('submit', async function (ev) {
         ev.preventDefault();
@@ -171,6 +204,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     decisionTreeContainer.innerHTML = `<img src="${data.decision_tree_image}" alt="Árbol de decisión" class="w-full" />`;
                 } else {
                     renderDecisionTree(data.decision_tree || []);
+                }
+
+                // Mostrar inferencia si viene del servidor
+                if (data.inference) {
+                    renderInference(data.inference);
                 }
                 summaryView.style.display = 'block';
             } else if (data.status === 'next') {

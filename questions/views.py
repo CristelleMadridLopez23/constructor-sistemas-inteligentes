@@ -40,12 +40,19 @@ class AnswerQuestionsView(View):
             next_questions = data_manager.get_next_questions(current_id, answer, asked)
             
             # Si no hay más preguntas, construir árbol de decisión
+            # Si no hay más preguntas, construir árbol de decisión
             if not next_questions:
-                tree = data_manager.build_decision_tree(data.get('answers', {}))
+                answers_map = data.get('answers', {})
+                tree = data_manager.build_decision_tree(answers_map)
+                # Obtener inferencias (top 3 por ejemplo)
+                inference = data_manager.infer_from_answers(answers_map, top_n=3)
+
                 result = {
-                    'status': 'completed',
-                    'decision_tree': tree
-                }
+                        'status': 'completed',
+                        'decision_tree': tree,
+                        'inference': inference
+                    }
+                print(inference)
 
                 # Intentar generar una imagen del árbol usando matplotlib
                 if plt is not None:

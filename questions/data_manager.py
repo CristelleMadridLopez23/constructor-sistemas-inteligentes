@@ -1,52 +1,85 @@
-import json
 import os
+import json
 from collections import defaultdict
 from django.conf import settings
 
-# Define la ruta del archivo de almacenamiento en el directorio del proyecto
-DATA_FILE = os.path.join(settings.BASE_DIR, 'questions_data.json')
+# Intentar varios nombres de archivo (fallback) — incluye tu preguntass.json
+POSSIBLE_DATA_FILES = [
+    os.path.join(settings.BASE_DIR, 'questions_data.json'),
+]
+
+# Seleccionar el primero existente (o el primero por defecto)
+DATA_FILE = next((p for p in POSSIBLE_DATA_FILES if os.path.exists(p)), POSSIBLE_DATA_FILES[0])
 
 QUESTIONS_STORE = {}
+INFERENCES_STORE = {}
 QUESTION_GRAPH = defaultdict(list)
 _NEXT_ID = 1
 _DATA_LOADED = False
 
 def _load_data():
-    """Carga las preguntas desde el archivo JSON al inicio."""
-    global QUESTIONS_STORE, _NEXT_ID, QUESTION_GRAPH, _DATA_LOADED
-    
+    global QUESTIONS_STORE, _NEXT_ID, QUESTION_GRAPH, _DATA_LOADED, INFERENCES_STORE, DATA_FILE
+
     if _DATA_LOADED:
         return
-    
+
+    # Si el DATA_FILE inicial no existe intentar encontrar uno existente
+    if not os.path.exists(DATA_FILE):
+        for p in POSSIBLE_DATA_FILES:
+            if os.path.exists(p):
+                DATA_FILE = p
+                break
+
     try:
+        # Cargar el archivo principal si existe
         if os.path.exists(DATA_FILE):
             with open(DATA_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                QUESTIONS_STORE = data.get('questions', {})
-                _NEXT_ID = data.get('next_id', 1)
-                
-                # Reconstruir el grafo en memoria
-                QUESTION_GRAPH = defaultdict(list)
-                for q_id, q_data in QUESTIONS_STORE.items():
-                    for relation in q_data.get('relations', []):
-                        QUESTION_GRAPH[q_id].append(relation)
-                
-                print(f"✓ Datos cargados: {len(QUESTIONS_STORE)} preguntas, próximo ID: {_NEXT_ID}")
+            QUESTIONS_STORE = data.get('questions', {}) or {}
+            INFERENCES_STORE = data.get('inferences', {}) or {}
+            _NEXT_ID = data.get('next_id', 1)
+
+            # Reconstruir grafo
+            QUESTION_GRAPH = defaultdict(list)
+            for q_id, q_data in QUESTIONS_STORE.items():
+                for rel in q_data.get('relations', []):
+                    QUESTION_GRAPH[q_id].append(rel)
+
+            print(f"✓ Datos cargados desde {DATA_FILE}: {len(QUESTIONS_STORE)} preguntas, {len(INFERENCES_STORE)} inferencias")
+
+            # Si no se encontraron inferencias, intentar buscar en otros archivos posibles y fusionar
+            if not INFERENCES_STORE:
+                for alt in POSSIBLE_DATA_FILES:
+                    if alt == DATA_FILE or not os.path.exists(alt):
+                        continue
+                    try:
+                        with open(alt, 'r', encoding='utf-8') as af:
+                            alt_data = json.load(af)
+                        alt_infs = alt_data.get('inferences', {}) or {}
+                        if alt_infs:
+                            INFERENCES_STORE.update(alt_infs)
+                            print(f"✓ Inferencias cargadas/mezcladas desde {alt} (added {len(alt_infs)} items)")
+                            # no break: permite fusionar varias fuentes
+                    except Exception:
+                        # no interrumpir por un archivo corrupto
+                        continue
         else:
-            print(f"✗ Archivo {DATA_FILE} no existe, iniciando con datos vacíos")
             QUESTIONS_STORE = {}
+            INFERENCES_STORE = {}
             _NEXT_ID = 1
             QUESTION_GRAPH = defaultdict(list)
+            print(f"✗ No se encontró archivo de datos en {POSSIBLE_DATA_FILES}; iniciando vacío")
     except Exception as e:
-        print(f"Error al cargar datos: {e}")
+        print(f"Error leyendo datos: {e}")
         QUESTIONS_STORE = {}
+        INFERENCES_STORE = {}
         _NEXT_ID = 1
         QUESTION_GRAPH = defaultdict(list)
-    
+
     _DATA_LOADED = True
 
 def _save_data():
-    """Guarda las preguntas en el archivo JSON."""
+    """Guarda las preguntas e inferencias en el archivo JSON."""
     try:
         # Asegurar que el directorio existe
         os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
@@ -54,12 +87,62 @@ def _save_data():
         with open(DATA_FILE, 'w', encoding='utf-8') as f:
             json.dump({
                 'questions': QUESTIONS_STORE,
+                'inferences': INFERENCES_STORE,   # guardar inferencias
                 'next_id': _NEXT_ID
             }, f, indent=4, ensure_ascii=False)
         
         print(f"✓ Datos guardados en {DATA_FILE}")
     except Exception as e:
         print(f"Error al guardar datos: {e}")
+        
+def infer_from_answers(answers_map, top_n=1, importance_weights=None):
+    """
+    Calcula inferencias finales basadas en un mapa de respuestas.
+    - answers_map: dict { "Q-007": "Sí", "Q-012": ["Dolor de garganta", ...] }
+    - top_n: número de inferencias a devolver
+    Retorna: { "results": [ {id, title, description, score, matched, threshold}, ... ] }
+    """
+    _load_data()
+    print("DEBUG infer_from_answers — answers_map:", answers_map)
+    print("DEBUG infer_from_answers — #inferences =", len(INFERENCES_STORE))
+    if importance_weights is None:
+        importance_weights = {'High': 0.9, 'Medium': 0.5, 'Low': 0.3}
+
+    results = []
+    for inf_id, inf in INFERENCES_STORE.items():
+        score = 0.0
+        matched_items = []
+        for cond in inf.get('conditions', []):
+            qid = cond.get('question_id')
+            cond_answer = cond.get('answer')
+            w = float(cond.get('weight', 0.0))
+            user_ans = answers_map.get(qid)
+            matched = False
+            if user_ans is None:
+                matched = False
+            elif isinstance(user_ans, (list, tuple)):
+                matched = cond_answer in user_ans
+            else:
+                matched = (str(user_ans) == str(cond_answer))
+            if matched:
+                q = QUESTIONS_STORE.get(qid, {})
+                importance = q.get('importance', 'Low')
+                imp_w = importance_weights.get(importance, 0.3)
+                score += w * imp_w
+                matched_items.append({"question_id": qid, "weight": w, "importance": importance})
+        threshold = float(inf.get('threshold', 0.0))
+        results.append({
+            "id": inf_id,
+            "title": inf.get('title'),
+            "description": inf.get('description', ''),
+            "score": round(score, 4),
+            "matched": score >= threshold,
+            "threshold": threshold,
+            "matched_items": matched_items
+        })
+
+    results.sort(key=lambda x: x['score'], reverse=True)
+    return {"results": results[:top_n], "all_results": results}
 
 def get_questions():
     """Retorna todas las preguntas ordenadas por ID."""
